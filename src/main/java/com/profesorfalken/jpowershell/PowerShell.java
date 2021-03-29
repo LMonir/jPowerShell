@@ -18,6 +18,7 @@ package com.profesorfalken.jpowershell;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -67,6 +68,8 @@ public class PowerShell implements AutoCloseable {
 	// Variables used for script mode
 	private boolean scriptMode = false;
 	public static final String END_SCRIPT_STRING = "--END-JPOWERSHELL-SCRIPT--";
+
+	private static HashSet<Long> pids = new HashSet<>();
 
 	// Private constructor. Instance using openSession method
 	private PowerShell() {
@@ -411,16 +414,18 @@ public class PowerShell implements AutoCloseable {
 					// If it can be closed, force kill the process
 					Logger.getLogger(PowerShell.class.getName()).log(Level.INFO,
 							"Forcing PowerShell to close. PID: " + this.pid);
-					try {
-						if (OSDetector.isWindows())
-							Runtime.getRuntime().exec(String.format(DEFAULT_WIN_TASKKILL, pid));
-						else
-							Runtime.getRuntime().exec(String.format(DEFAULT_LINUX_TASKKILL, pid));
-						this.closed = true;
-					} catch (IOException e) {
-						Logger.getLogger(PowerShell.class.getName()).log(Level.SEVERE,
-								"Unexpected error while killing powershell process", e);
-					}
+//					try {
+//						if (OSDetector.isWindows())
+//							Runtime.getRuntime().exec(String.format(DEFAULT_WIN_TASKKILL, pid));
+//						else
+//							Runtime.getRuntime().exec(String.format(DEFAULT_LINUX_TASKKILL, pid));
+//						this.closed = true;
+//					} catch (IOException e) {
+//						Logger.getLogger(PowerShell.class.getName()).log(Level.SEVERE,
+//								"Unexpected error while killing powershell process", e);
+//					}
+					pids.add(this.pid);
+					this.closed = true;
 				}
 			} catch (InterruptedException | ExecutionException ex) {
 				logger.log(Level.SEVERE, "Unexpected error when when closing PowerShell", ex);
@@ -493,8 +498,21 @@ public class PowerShell implements AutoCloseable {
 		}
 		return null;
 	}
-	
+
 	public static boolean isWindows() {
 		return OSDetector.isWindows();
+	}
+
+	public static void closeOpenPIDs() {
+		for (long l : pids)
+			try {
+				if (OSDetector.isWindows())
+					Runtime.getRuntime().exec(String.format(DEFAULT_WIN_TASKKILL, l));
+				else
+					Runtime.getRuntime().exec(String.format(DEFAULT_LINUX_TASKKILL, l));
+			} catch (IOException e) {
+				Logger.getLogger(PowerShell.class.getName()).log(Level.SEVERE,
+						"Unexpected error while killing powershell process", e);
+			}
 	}
 }
