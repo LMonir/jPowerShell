@@ -493,4 +493,8 @@ public class PowerShell implements AutoCloseable {
 		}
 		return null;
 	}
+	
+	public static boolean isWindows() {
+		return OSDetector.isWindows();
+	}
 }
