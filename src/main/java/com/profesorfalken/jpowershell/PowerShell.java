@@ -24,6 +24,8 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jdk.internal.org.jline.utils.Log;
+
 /**
  * This API allows to open a session into PowerShell console and launch
  * different commands.<br>
@@ -506,13 +508,19 @@ public class PowerShell implements AutoCloseable {
 	public static void closeOpenPIDs() {
 		for (long l : pids)
 			try {
-				if (OSDetector.isWindows())
+				if (OSDetector.isWindows()) {
 					Runtime.getRuntime().exec(String.format(DEFAULT_WIN_TASKKILL, l));
-				else
+				} else {
 					Runtime.getRuntime().exec(String.format(DEFAULT_LINUX_TASKKILL, l));
+				}
+				logger.info("Killing Process " + l);
+				Thread.sleep(2000);
 			} catch (IOException e) {
 				Logger.getLogger(PowerShell.class.getName()).log(Level.SEVERE,
 						"Unexpected error while killing powershell process", e);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 	}
 }
